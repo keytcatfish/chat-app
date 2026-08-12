@@ -121,6 +121,20 @@
 .avatar-sec.secili {
   border-color: #ffffff;
 }
+
+#online-listesi {
+  position: fixed;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #555;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+
   </style>
 </head>
 <body>
@@ -149,6 +163,7 @@
 </div>
 
 <div id="chat-ekrani">
+ <div id="online-listesi" style="color:#555; font-size:12px; margin-bottom:8px;"></div>
   <div id="kullanici-adi"></div>
   <div id="mesajlar"></div>
   <div id="alt-kisim">
@@ -229,6 +244,16 @@ if (!secilenAvatar) {
     document.getElementById('mesajlar').appendChild(div);
   });
 
+  socket.on('online', (liste) => {
+    const div = document.getElementById('online-listesi');
+    div.innerHTML = '';
+    liste.forEach(k => {
+      const p = document.createElement('p');
+      p.style.margin = '0';
+      p.textContent = k;
+      div.appendChild(p);
+    });
+  });
 });
 </script>
 </body>

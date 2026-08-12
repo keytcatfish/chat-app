@@ -8,10 +8,14 @@ const io = socketio(server);
 
 app.use(express.static('public'));
 
+const onlineKullanicilar = new Set();
+
 io.on('connection', (socket) => {
 
   socket.on('katil', (kullanici) => {
     socket.kullanici = kullanici;
+    onlineKullanicilar.add(kullanici);
+    io.emit('online', Array.from(onlineKullanicilar));
     io.emit('sistem', kullanici + ' odaya katıldı');
   });
 
@@ -21,6 +25,8 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     if (socket.kullanici) {
+      onlineKullanicilar.delete(socket.kullanici);
+      io.emit('online', Array.from(onlineKullanicilar));
       io.emit('sistem', socket.kullanici + ' ayrıldı');
     }
   });
