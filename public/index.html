@@ -212,7 +212,11 @@ if (!secilenAvatar) {
   socket.on('mesaj', (data) => {
     const div = document.createElement('div');
     div.className = 'mesaj';
-    div.innerHTML = '<span>' + data.kullanici + '</span>' + data.mesaj;
+    const span = document.createElement('span');
+    span.textContent = data.kullanici;
+    const mesajText = document.createTextNode(data.mesaj);
+    div.appendChild(span);
+    div.appendChild(mesajText);
     document.getElementById('mesajlar').appendChild(div);
   });
 
