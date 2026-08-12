@@ -234,6 +234,8 @@ if (!secilenAvatar) {
     div.appendChild(span);
     div.appendChild(mesajText);
     document.getElementById('mesajlar').appendChild(div);
+    const mesajlar = document.getElementById('mesajlar');
+    mesajlar.scrollTop = mesajlar.scrollHeight;
   });
 
   socket.on('sistem', (mesaj) => {
@@ -266,6 +268,8 @@ if (!secilenAvatar) {
       div.appendChild(span);
       div.appendChild(mesajText);
       document.getElementById('mesajlar').appendChild(div);
+      const mesajlar = document.getElementById('mesajlar');
+      mesajlar.scrollTop = mesajlar.scrollHeight;
     });
   });
 });
