@@ -163,6 +163,7 @@
 </div>
 
 <div id="chat-ekrani">
+<div id="geri-sayim" style="position:fixed; top:20px; left:50%; transform:translateX(-50%); color:#555; font-size:12px;"></div>
  <div id="online-listesi" style="color:#555; font-size:12px; margin-bottom:8px;"></div>
   <div id="kullanici-adi"></div>
   <div id="mesajlar"></div>
@@ -254,7 +255,37 @@ if (!secilenAvatar) {
       div.appendChild(p);
     });
   });
+
+  socket.on('gecmis', (gecmis) => {
+    gecmis.forEach(data => {
+      const div = document.createElement('div');
+      div.className = 'mesaj';
+      const span = document.createElement('span');
+      span.textContent = data.kullanici;
+      const mesajText = document.createTextNode(data.mesaj);
+      div.appendChild(span);
+      div.appendChild(mesajText);
+      document.getElementById('mesajlar').appendChild(div);
+    });
+  });
 });
+
+function geriSayimGuncelle() {
+  const simdi = new Date();
+  const geceyarisi = new Date();
+  geceyarisi.setHours(24, 0, 0, 0);
+  const kalan = geceyarisi - simdi;
+
+  const saat = Math.floor(kalan / 1000 / 60 / 60);
+  const dakika = Math.floor((kalan / 1000 / 60) % 60);
+  const saniye = Math.floor((kalan / 1000) % 60);
+
+  document.getElementById('geri-sayim').textContent = 
+    'sıfırlanmaya ' + saat + 's ' + dakika + 'd ' + saniye + 'sn';
+}
+
+setInterval(geriSayimGuncelle, 1000);
+geriSayimGuncelle();
 </script>
 </body>
 </html>
