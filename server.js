@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const socketio = require('socket.io');
+const sqlite3 = require('sqlite3').verbose();
 
 const app = express();
 const server = http.createServer(app);
@@ -8,8 +9,18 @@ const io = socketio(server);
 
 app.use(express.static('public'));
 
+const db = new sqlite3.Database('chat.db');
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS mesajlar (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kullanici TEXT,
+    mesaj TEXT,
+    zaman INTEGER
+  )
+`);
+
 const onlineKullanicilar = new Set();
-const mesajGecmisi = [];
 
 io.on('connection', (socket) => {
 
@@ -17,13 +28,15 @@ io.on('connection', (socket) => {
     socket.kullanici = kullanici;
     onlineKullanicilar.add(kullanici);
     io.emit('online', Array.from(onlineKullanicilar));
-    socket.emit('gecmis', mesajGecmisi);
+    db.all('SELECT * FROM mesajlar ORDER BY zaman ASC', (err, rows) => {
+      socket.emit('gecmis', rows);
+    });
     io.emit('sistem', kullanici + ' odaya katıldı');
   });
 
   socket.on('mesaj', (data) => {
-    mesajGecmisi.push(data);
-    if (mesajGecmisi.length > 50) mesajGecmisi.shift();
+    db.run('INSERT INTO mesajlar (kullanici, mesaj, zaman) VALUES (?, ?, ?)',
+      [data.kullanici, data.mesaj, Date.now()]);
     io.emit('mesaj', data);
   });
 
@@ -42,9 +55,8 @@ function geceyarisisiSifirla() {
   const geceyarisi = new Date();
   geceyarisi.setHours(24, 0, 0, 0);
   const kalan = geceyarisi - simdi;
-  
   setTimeout(() => {
-    mesajGecmisi.length = 0;
+    db.run('DELETE FROM mesajlar');
     io.emit('sistem', 'Mesajlar sıfırlandı. Yeni gün başladı.');
     io.emit('gecmis', []);
     geceyarisisiSifirla();
