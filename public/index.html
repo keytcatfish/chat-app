@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0f0f0f;
+      color: #ffffff;
+      font-family: monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    #giris-ekrani {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    input {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: white;
+      padding: 10px;
+      font-size: 18px;
+      text-align: center;
+      width: 150px;
+      letter-spacing: 4px;
+    }
+
+    button {
+      background: #ffffff;
+      color: #0f0f0f;
+      border: none;
+      padding: 12px 40px;
+      font-size: 16px;
+      cursor: pointer;
+      font-family: monospace;
+    }
+
+    #chat-ekrani {
+  display: none;
+  flex-direction: column;
+  width: 600px;
+  height: 80vh;
+}
+
+#kullanici-adi {
+  color: #888;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+#mesajlar {
+  flex: 1;
+  overflow-y: auto;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#alt-kisim {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+#mesaj-input {
+  flex: 1;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  color: white;
+  padding: 10px;
+  font-size: 14px;
+  font-family: monospace;
+  letter-spacing: normal;
+  width: auto;
+}
+
+.mesaj {
+  font-size: 14px;
+}
+
+.mesaj span {
+  color: #888;
+  margin-right: 8px;
+}
+
+#avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.avatar-sec {
+  font-size: 32px;
+  cursor: pointer;
+  padding: 8px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.avatar-sec:hover {
+  border-color: #555;
+}
+
+.avatar-sec.secili {
+  border-color: #ffffff;
+}
+  </style>
+</head>
+<body>
+
+<div id="giris-ekrani">
+  <h2>avatar seç</h2>
+  <div id="avatar-grid">
+    <span class="avatar-sec">🐭</span>
+    <span class="avatar-sec">🐮</span>
+    <span class="avatar-sec">🐯</span>
+    <span class="avatar-sec">🐰</span>
+    <span class="avatar-sec">🐲</span>
+    <span class="avatar-sec">🐍</span>
+    <span class="avatar-sec">🐴</span>
+    <span class="avatar-sec">🐑</span>
+    <span class="avatar-sec">🐵</span>
+    <span class="avatar-sec">🐓</span>
+    <span class="avatar-sec">🐶</span>
+    <span class="avatar-sec">🐷</span>
+  </div>
+  <h2>isim</h2>
+  <input type="text" id="isim" maxlength="3" placeholder="cat">
+  <h2>numara</h2>
+  <input type="text" id="numara" maxlength="3" placeholder="111">
+  <button id="giris-btn">giriş</button>
+</div>
+
+<div id="chat-ekrani">
+  <div id="kullanici-adi"></div>
+  <div id="mesajlar"></div>
+  <div id="alt-kisim">
+    <input type="text" id="mesaj-input" placeholder="mesaj yaz...">
+    <button id="gonder-btn">gönder</button>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const girisBtn = document.getElementById('giris-btn');
+const isimInput = document.getElementById('isim');
+const numaraInput = document.getElementById('numara');
+
+let secilenAvatar = '';
+
+document.querySelectorAll('.avatar-sec').forEach((el) => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.avatar-sec').forEach(a => a.classList.remove('secili'));
+    el.classList.add('secili');
+    secilenAvatar = el.textContent;
+  });
+});
+
+girisBtn.addEventListener('click', () => {
+  const isim = isimInput.value.trim();
+  const numara = numaraInput.value.trim();
+
+if (!secilenAvatar) {
+    alert('Bir avatar seç');
+    return;
+  }
+
+  if (isim.length !== 3 || numara.length !== 3) {
+    alert('İsim ve numara tam 3 karakter olmalı');
+    return;
+  }
+
+  const kullanici = secilenAvatar + ' ' + isim + '#' + numara;
+  document.getElementById('giris-ekrani').style.display = 'none';
+  document.getElementById('chat-ekrani').style.display = 'flex';
+  document.getElementById('kullanici-adi').textContent = kullanici;
+
+  const socket = io();
+
+  socket.emit('katil', kullanici);
+
+  document.getElementById('gonder-btn').addEventListener('click', () => {
+    const mesaj = document.getElementById('mesaj-input').value.trim();
+    if (mesaj === '') return;
+    socket.emit('mesaj', { kullanici, mesaj });
+    document.getElementById('mesaj-input').value = '';
+  });
+
+  document.getElementById('mesaj-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      document.getElementById('gonder-btn').click();
+    }
+  });
+
+  socket.on('mesaj', (data) => {
+    const div = document.createElement('div');
+    div.className = 'mesaj';
+    div.innerHTML = '<span>' + data.kullanici + '</span>' + data.mesaj;
+    document.getElementById('mesajlar').appendChild(div);
+  });
+
+  socket.on('sistem', (mesaj) => {
+    const div = document.createElement('div');
+    div.style.color = '#555';
+    div.style.fontSize = '12px';
+    div.style.textAlign = 'center';
+    div.textContent = mesaj;
+    document.getElementById('mesajlar').appendChild(div);
+  });
+
+});
+</script>
+</body>
+</html>
